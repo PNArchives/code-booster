@@ -22,12 +22,17 @@
         "command": "codeBooster.pickItem",
         "title": "Pick Item",
         "category": "Code Booster"
+      },
+      {
+        "command": "codeBooster.review",
+        "title": "Review",
+        "category": "Code Booster"
       }
     ],
     "keybindings": [
       {
-        "command": "codeBooster.sayHello",
-        "key": "ctrl+alt+h",
+        "command": "codeBooster.review",
+        "key": "ctrl+cmd+a",
         "when": "editorTextFocus"
       }
     ],
@@ -35,7 +40,7 @@
       "editor/context": [
         {
           "when": "editorTextFocus",
-          "command": "codeBooster.sayHello"
+          "command": "codeBooster.review"
         }
       ]
     }
@@ -49,14 +54,17 @@
     "test": "vscode-test"
   },
   "devDependencies": {
-    "@types/vscode": "^1.86.0",
     "@types/mocha": "^10.0.6",
     "@types/node": "18.x",
+    "@types/vscode": "^1.86.0",
     "@typescript-eslint/eslint-plugin": "^6.15.0",
     "@typescript-eslint/parser": "^6.15.0",
-    "eslint": "^8.56.0",
-    "typescript": "^5.3.3",
     "@vscode/test-cli": "^0.0.4",
-    "@vscode/test-electron": "^2.3.8"
+    "@vscode/test-electron": "^2.3.8",
+    "eslint": "^8.56.0",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "openai": "^4.28.0"
   }
 }
