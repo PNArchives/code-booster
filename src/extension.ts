@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import PickItemCommand from './commands/pick-item';
 import SayHelloCommand from './commands/say-hello';
 
 // This method is called when your extension is activated
@@ -7,7 +8,8 @@ export function activate(context: vscode.ExtensionContext) {
 	console.log('Congratulations, your extension "code-booster" is now active!');
 
 	context.subscriptions.push(
-		vscode.commands.registerCommand('codeBooster.sayHello', SayHelloCommand)
+		vscode.commands.registerCommand('codeBooster.sayHello', SayHelloCommand),
+		vscode.commands.registerCommand('codeBooster.pickItem', PickItemCommand),
 	);
 }
 

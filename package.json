@@ -17,6 +17,11 @@
         "command": "codeBooster.sayHello",
         "title": "Hello World",
         "category": "Code Booster"
+      },
+      {
+        "command": "codeBooster.pickItem",
+        "title": "Pick Item",
+        "category": "Code Booster"
       }
     ],
     "keybindings": [
