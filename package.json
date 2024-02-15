@@ -14,10 +14,26 @@
   "contributes": {
     "commands": [
       {
-        "command": "code-booster.helloWorld",
-        "title": "Hello World"
+        "command": "codeBooster.sayHello",
+        "title": "Hello World",
+        "category": "Code Booster"
       }
-    ]
+    ],
+    "keybindings": [
+      {
+        "command": "codeBooster.sayHello",
+        "key": "ctrl+alt+h",
+        "when": "editorTextFocus"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "when": "editorTextFocus",
+          "command": "codeBooster.sayHello"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "pnpm run compile",
