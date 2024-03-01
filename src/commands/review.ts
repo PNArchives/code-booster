@@ -1,118 +1,85 @@
-import OpenAI from 'openai';
 import * as vscode from 'vscode';
+import assistant from '../assistant';
+// import assistant from '../assistant';
 
-const apiKey = process.env['OPENAI_API_KEY'];
-const ai = new OpenAI({
-    apiKey: apiKey,
-});
-// const defaultInstruction = `変数、定数、関数の命名チェックと改善提案
-// 目的: コードの可読性と保守性を高めるために、変数、定数、関数の命名が適切で意味が明確かどうかをチェックし、必要に応じて改善案を提案する。`
-const assistantID = 'asst_9rbZ3yXnZJhXH6Eatsxdz2RS';
+/* ToDo
+- [ ] API Keyの保存の仕方を考える
+- [ ] instructionを考え直す (機能実装なのかテストなのかで違う、複数のアシスタントを準備すべき?)
+- [ ] 取得するコードの範囲を変える
+- [ ] スレッドを削除するタイミング
+*/
 
-const listMessages = async (threadID: string) => {
-    const threadMessages = await ai.beta.threads.messages.list(threadID);
-    console.log('---------- メッセージ一覧 ----------');
-    console.log(threadMessages);
-    console.log();
-    return threadMessages;
+const insertBlockComment = async (editor: vscode.TextEditor, selectionIndex: number, comment: string) => {
+  await editor.edit(async (edit) => {
+      const position = new vscode.Position(editor.selections[selectionIndex].end.line, 0)
+      edit.insert(position, comment+"\n")
+
+      // const lineCount = comment.split('\n').length
+      // const range = new vscode.Range(
+      //   new vscode.Position(position.line, 0),
+      //   new vscode.Position(position.line + lineCount, 0),
+      // );
+      // console.log(range)
+      // await vscode.commands.executeCommand('editor.action.blockComment', range)
+  })
 }
-const createThreadAndRun = async (message: string) => {
-    const run = await ai.beta.threads.createAndRun({
-        assistant_id: assistantID,
-        thread: {
-            messages: [
-                {
-                    role: "user",
-                    content: message,
-                },
-            ],
-        },
-    });
-    console.log(`New Thread ID: ${run.thread_id}, Run ID: ${run.id}`);
-    return run;
-}
-const deleteThread = async (threadID: string) => {
-    const result = await ai.beta.threads.del(threadID);
-    if (result.deleted) {
-        console.log(`Thread ${threadID} deleted.`);
-    } else {
-        console.error(`Failed to delete thread ${threadID}.`);
-    }
+
+const updateInstructions = async () => {
+  const text = `Please respond in Japanese.
+
+Function 1: Check and improve variable, constant, and function names for readability and maintainability.
+Details:
+- Analyze names of variables, constants, and functions.
+- Evaluate if names represent their functionality clearly.
+- Confirm adherence to programming conventions (e.g., camel case, snake case).
+- Propose better names when appropriate, explaining the reasons.
+
+Function 2: Identify and improve code affecting performance.
+Details:
+- Identify performance-affecting patterns (e.g., nested loops, improper data structure use).
+- Propose specific improvements to address these issues, explaining their impact.
+
+Function 3: Suggest guard clauses for readability.
+Details:
+- Identify factors reducing readability (e.g., deep nesting, complex conditionals).
+- Propose specific improvements (e.g., guard clauses), explaining their readability enhancement.`
+  const gpt4model = "gpt-4-turbo-preview";
+  await assistant.updateInstructions(text);
 }
 
 export default async function (context: vscode.ExtensionContext) {
     const editor = vscode.window.activeTextEditor;
     if (!editor) {
-        console.log('No editor!');
+        console.error('開いているエディタがありません!');
         return;
     }
 
     const filePath = editor.document.fileName
-    console.log(`File path: ${filePath}`)
 
-    const { document, selections } = editor;
-    if (selections.length === 0) {
+    if (editor.selections.length === 0) {
         vscode.window.showInformationMessage('No selection!');
         return;
     }
 
-    const code = document.getText(selections[0])
-    console.log(`Code:\n${code}`)
+    updateInstructions()
 
-    const newRun = await createThreadAndRun(code);
+    const selection = editor.selections[0];
+    const selectContent = editor.document.getText(selection);
 
-    while(true) {
-        await new Promise(resolve => setTimeout(resolve, 5000));
-
-        const run = await ai.beta.threads.runs.retrieve(newRun.thread_id, newRun.id);
-        console.log(`Run's status = ${run.status}`)
-        if (run.status == 'completed') {
-            console.log(`Total token usage = ${run.usage?.total_tokens ?? -1}`)
-            break
-        }
+    const run = await assistant.createThreadAndRun(filePath, selectContent);
+    if (!run) {
+        vscode.window.showInformationMessage('スレッドの作成に失敗しました');
+        return;
     }
 
-    const messages = await listMessages(newRun.thread_id);
-    await deleteThread(newRun.thread_id);
-    console.log('---------- ---------- ----------');
-    messages.data[0].content.forEach((content) => {
-        const message = content as OpenAI.Beta.Threads.Messages.MessageContentText
-        console.log(`=> ${message.text.value}`)
-    })
+    const ok = await assistant.checkRunStatus(run.thread_id, run.id, 3_000, 120_000);
+    if (!ok) {
+        vscode.window.showInformationMessage('スレッドの実行に失敗しました');
+        await assistant.deleteThread(filePath);
+        return;
+    }
 
-/* ToDo
-- API Keyの保存の仕方を考える
-- instructionを考え直す
-- 取得するコードの範囲を変える
-- スレッドを削除するタイミング
-*/
-
-    // await editor.edit(async (editBuilder) => {
-    //     if (selections.length === 0) {
-    //         vscode.window.showWarningMessage('No selection!');
-    //         return;
-    //     }
-    //     await vscode.commands.executeCommand('editor.action.insertLineAfter')
-
-    //     selections.forEach(async (selection) => {
-    //         const response = '以下はレビュー結果です:\nhello world!'
-    //         response.split('\n').forEach(async (line) => {
-    //             await editBuilder.insert(selection.end, `${line}\n`)
-    //         })
-    //     })
-
-        // const response = '以下はレビュー結果です:\nhello world!'
-        // const insertPos = new vscode.Position(selection.end.line + 1, 0);
-        // const content = `\n${response}\n\n`;
-        // await editBuilder.insert(insertPos, content);
-
-        // const lineCount = response.split('\n').length;
-        // const range = new vscode.Range(
-        //     new vscode.Position(selection.end.line + 1, 0),
-        //     new vscode.Position(selection.end.line + 1 + lineCount, 0),
-        // );
-        // console.log(range)
-        // await vscode.commands.executeCommand('editor.action.blockComment', range)
-    // })
-
+    const response = await assistant.getLastMessage(filePath);
+    await insertBlockComment(editor, 0, response)
+    await assistant.deleteThread(filePath);
 }

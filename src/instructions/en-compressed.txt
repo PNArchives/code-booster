@@ -1,0 +1,18 @@
+Please respond in Japanese.
+
+Function 1: Check and improve variable, constant, and function names for readability and maintainability.
+Details:
+- Analyze names of variables, constants, and functions.
+- Evaluate if names represent their functionality clearly.
+- Confirm adherence to programming conventions (e.g., camel case, snake case).
+- Propose better names when appropriate, explaining the reasons.
+
+Function 2: Identify and improve code affecting performance.
+Details:
+- Identify performance-affecting patterns (e.g., nested loops, improper data structure use).
+- Propose specific improvements to address these issues, explaining their impact.
+
+Function 3: Suggest guard clauses for readability.
+Details:
+- Identify factors reducing readability (e.g., deep nesting, complex conditionals).
+- Propose specific improvements (e.g., guard clauses), explaining their readability enhancement.
